@@ -44,7 +44,6 @@ export function ProviderCard({ sample }: ProviderCardProps) {
   const throughput = getMetric(data, type, 'gen_throughput', 'predicted_tokens_seconds')
   const activeRequests = getMetric(data, type, 'num_running_reqs', 'requests_processing')
   const queue = getMetric(data, type, 'num_queue_reqs', 'requests_deferred')
-  const tokenUsage = getMetric(data, type, 'token_usage', 'kv_cache_usage_ratio')
   const promptTokens = getMetric(data, type, 'prompt_tokens_total')
   const generatedTokens = getMetric(
     data,
@@ -54,10 +53,15 @@ export function ProviderCard({ sample }: ProviderCardProps) {
   )
   const contextTokens = getMetric(data, type, 'num_used_tokens', 'kv_cache_tokens')
   const kvAvailable = getMetric(data, type, 'kv_available_tokens', 'kv_cache_free_tokens')
-  const totalContext =
-    contextTokens !== undefined && kvAvailable !== undefined
-      ? contextTokens + kvAvailable
-      : contextTokens
+  const tokenUsage = getMetric(data, type, 'token_usage', 'kv_cache_usage_ratio')
+  let totalContext: number | undefined
+  if (contextTokens !== undefined && kvAvailable !== undefined) {
+    totalContext = contextTokens + kvAvailable
+  } else if (contextTokens !== undefined && tokenUsage !== undefined && tokenUsage > 0) {
+    totalContext = contextTokens / tokenUsage
+  } else {
+    totalContext = contextTokens
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">

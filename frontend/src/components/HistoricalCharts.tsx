@@ -18,6 +18,15 @@ const TIME_RANGES = [
   { label: '3d', minutes: 4320 },
 ]
 
+// Stored timestamps are UTC-naive from SQLite datetime('now'), e.g. "2026-09-04 09:38:15".
+// new Date("2026-09-04 09:38:15") would parse them as LOCAL time, shifting them off the
+// same absolute timeline as Date.now(). Normalize to an explicit UTC ISO string first.
+function toEpoch(ts: string): number {
+  const normalized = ts.includes('T') ? ts : ts.replace(' ', 'T')
+  const withZ = /(Z|[+-]\d\d:\d\d)$/.test(normalized) ? normalized : normalized + 'Z'
+  return new Date(withZ).getTime()
+}
+
 export function HistoricalCharts({ providers }: HistoricalChartsProps) {
   const [providerId, setProviderId] = useState<number | null>(null)
   const [range, setRange] = useState(5)
@@ -59,7 +68,7 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
 
   const series = (getValue: (d: Record<string, unknown>) => number) =>
     history.map((sample) => ({
-      time: new Date(sample.timestamp).getTime(),
+      time: toEpoch(sample.timestamp),
       value: getValue(sample.data),
     }))
 
