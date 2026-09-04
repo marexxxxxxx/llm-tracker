@@ -160,7 +160,11 @@ async def check_provider_health(provider_id: int):
     if client is None:
         raise HTTPException(status_code=400, detail="Unknown provider type")
 
-    result = await client.check_health()
+    try:
+        result = await client.check_health()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Provider unreachable: {e}")
+
     return HealthResponse(
         status=result.get("status", "error"),
         provider_id=provider_id,

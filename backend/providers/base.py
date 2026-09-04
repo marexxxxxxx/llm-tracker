@@ -2,11 +2,29 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
+def _normalize_host(host: str) -> tuple[str, str]:
+    """Split a host value into (scheme, bare_host).
+
+    Accepts bare hosts ('192.168.1.24', 'localhost') or hosts that already
+    include a scheme ('http://192.168.1.24', 'https://example.com').
+    """
+    host = (host or "").strip()
+    scheme = "http"
+    if "://" in host:
+        scheme, host = host.split("://", 1)
+        scheme = scheme.lower()
+        if scheme not in ("http", "https"):
+            scheme = "http"
+    if not host:
+        raise ValueError("host must not be empty")
+    return scheme, host
+
+
 class BaseProvider(ABC):
     def __init__(self, host: str, port: int):
-        self.host = host
+        self._scheme, self.host = _normalize_host(host)
         self.port = port
-        self.base_url = f"http://{host}:{port}"
+        self.base_url = f"{self._scheme}://{self.host}:{port}"
 
     @abstractmethod
     async def fetch_metrics(self) -> dict[str, Any]:
