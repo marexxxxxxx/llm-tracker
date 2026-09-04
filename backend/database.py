@@ -1,9 +1,10 @@
 import aiosqlite
 import json
+import os
 from datetime import datetime
 from typing import Optional
 
-DB_PATH = "tracker.db"
+DB_PATH = os.environ.get("DB_PATH", "tracker.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS providers (

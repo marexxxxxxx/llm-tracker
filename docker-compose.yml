@@ -1,0 +1,32 @@
+services:
+  db:
+    build: ./db
+    container_name: llm-tracker-db
+    volumes:
+      - db-data:/var/lib/tracker
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: llm-tracker-backend
+    environment:
+      DB_PATH: /data/tracker.db
+    volumes:
+      - db-data:/data
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: llm-tracker-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+
+volumes:
+  db-data:
