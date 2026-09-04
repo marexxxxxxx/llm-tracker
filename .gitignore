@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+
+# SQLite database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Editor
+.idea/
+.vscode/
+.DS_Store
+
+# Build artifacts
+*.min.js
+*.map
+*.tsbuildinfo
