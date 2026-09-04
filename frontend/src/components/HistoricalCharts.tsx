@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { metricsApi } from '../api'
+import { getMetric } from '../metrics'
 import { MetricsChart } from './MetricsChart'
 import type { MetricsHistory, Provider } from '../types'
 
@@ -46,6 +47,9 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
     }
   }, [providerId, range])
 
+  const selected = providers.find((p) => p.id === providerId)
+  const type = selected?.type
+
   const series = (getValue: (d: Record<string, unknown>) => number) =>
     history.map((sample) => ({
       time: new Date(sample.timestamp).toLocaleTimeString(),
@@ -53,11 +57,7 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
     }))
 
   const getNum = (data: Record<string, unknown>, ...keys: string[]): number => {
-    for (const key of keys) {
-      const value = data[key]
-      if (typeof value === 'number') return value
-    }
-    return 0
+    return getMetric(data, type, keys[0], ...keys.slice(1)) ?? 0
   }
 
   if (providers.length === 0) return null

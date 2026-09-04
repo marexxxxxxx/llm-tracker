@@ -1,4 +1,5 @@
 import { useMetrics } from '../hooks/useMetrics'
+import { getMetric } from '../metrics'
 import { ProviderCard } from './ProviderCard'
 
 export function Dashboard() {
@@ -41,8 +42,7 @@ export function Dashboard() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Total Active Requests</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {metrics.reduce((sum, m) => {
-              const running = (m.data.num_running_reqs ?? m.data.requests_processing) as number
-              return sum + (typeof running === 'number' ? running : 0)
+              return sum + (getMetric(m.data, m.type, 'num_running_reqs', 'requests_processing') ?? 0)
             }, 0)}
           </p>
         </div>
@@ -51,8 +51,7 @@ export function Dashboard() {
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {(
               metrics.reduce((sum, m) => {
-                const throughput = (m.data.gen_throughput ?? m.data.predicted_tokens_seconds) as number
-                return sum + (typeof throughput === 'number' ? throughput : 0)
+                return sum + (getMetric(m.data, m.type, 'gen_throughput', 'predicted_tokens_seconds') ?? 0)
               }, 0) / metrics.length
             ).toFixed(1)}
           </p>
