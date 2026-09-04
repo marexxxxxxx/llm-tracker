@@ -124,12 +124,15 @@ async def latest_metrics():
 @app.get("/api/metrics/history/{provider_id}", response_model=list[MetricsHistory])
 async def metrics_history(
     provider_id: int,
-    hours: int = Query(default=24, ge=1, le=168),
+    hours: float = Query(default=24, gt=0, le=168),
+    minutes: Optional[float] = Query(default=None, gt=0, le=10080),
     limit: int = Query(default=500, ge=1, le=5000),
 ):
     db = await get_db()
     try:
-        return await get_metrics_history(db, provider_id, hours=hours, limit=limit)
+        return await get_metrics_history(
+            db, provider_id, hours=hours, limit=limit, minutes=minutes
+        )
     finally:
         await db.close()
 

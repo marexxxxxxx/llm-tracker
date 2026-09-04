@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { metricsApi } from '../api'
 import { getMetric } from '../metrics'
 import { MetricsChart } from './MetricsChart'
+import { SpeedContextChart } from './SpeedContextChart'
 import type { MetricsHistory, Provider } from '../types'
 
 interface HistoricalChartsProps {
@@ -9,15 +10,17 @@ interface HistoricalChartsProps {
 }
 
 const TIME_RANGES = [
-  { label: '1h', hours: 1 },
-  { label: '6h', hours: 6 },
-  { label: '24h', hours: 24 },
-  { label: '3d', hours: 72 },
+  { label: '5m', minutes: 5 },
+  { label: '15m', minutes: 15 },
+  { label: '1h', minutes: 60 },
+  { label: '6h', minutes: 360 },
+  { label: '24h', minutes: 1440 },
+  { label: '3d', minutes: 4320 },
 ]
 
 export function HistoricalCharts({ providers }: HistoricalChartsProps) {
   const [providerId, setProviderId] = useState<number | null>(null)
-  const [range, setRange] = useState(1)
+  const [range, setRange] = useState(5)
   const [history, setHistory] = useState<MetricsHistory[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -51,7 +54,7 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
   const type = selected?.type
 
   const endMs = Date.now()
-  const startMs = endMs - range * 3600 * 1000
+  const startMs = endMs - range * 60 * 1000
   const timeDomain: [number, number] = [startMs, endMs]
 
   const series = (getValue: (d: Record<string, unknown>) => number) =>
@@ -63,6 +66,15 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
   const getNum = (data: Record<string, unknown>, ...keys: string[]): number => {
     return getMetric(data, type, keys[0], ...keys.slice(1)) ?? 0
   }
+
+  const speedContextData = history
+    .map((sample) => {
+      const used = getNum(sample.data, 'token_usage', 'kv_cache_usage_ratio')
+      const speed = getNum(sample.data, 'gen_throughput', 'predicted_tokens_seconds')
+      if (used <= 0 || speed <= 0) return null
+      return { x: Math.min(used, 1), y: speed }
+    })
+    .filter((p): p is { x: number; y: number } => p !== null)
 
   if (providers.length === 0) return null
 
@@ -84,10 +96,10 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
         <div className="flex gap-1 rounded-lg bg-gray-200 dark:bg-gray-700 p-1">
           {TIME_RANGES.map((r) => (
             <button
-              key={r.hours}
-              onClick={() => setRange(r.hours)}
+              key={r.minutes}
+              onClick={() => setRange(r.minutes)}
               className={`px-3 py-1 text-sm rounded ${
-                range === r.hours
+                range === r.minutes
                   ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
                   : 'text-gray-600 dark:text-gray-300'
               }`}
@@ -132,6 +144,13 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
             unit="requests"
             timeDomain={timeDomain}
           />
+          <div className="lg:col-span-2">
+            <SpeedContextChart
+              title="Token Speed vs Context"
+              data={speedContextData}
+              color="#8b5cf6"
+            />
+          </div>
         </div>
       )}
     </div>

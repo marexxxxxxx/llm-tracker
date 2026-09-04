@@ -119,6 +119,19 @@ async def test_metrics_history():
 
 
 @pytest.mark.asyncio
+async def test_metrics_history_minutes_precision():
+    db = await get_db()
+    try:
+        p = await create_provider(db, "HistMin", "sglang", "localhost", 30000)
+        await insert_metrics(db, p["id"], {"iter": 1})
+        history = await get_metrics_history(db, p["id"], minutes=5, limit=10)
+        assert len(history) == 1
+        assert history[0]["data"]["iter"] == 1
+    finally:
+        await db.close()
+
+
+@pytest.mark.asyncio
 async def test_metrics_summary():
     db = await get_db()
     try:

@@ -53,6 +53,11 @@ export function ProviderCard({ sample }: ProviderCardProps) {
     'tokens_predicted_total',
   )
   const contextTokens = getMetric(data, type, 'num_used_tokens', 'kv_cache_tokens')
+  const kvAvailable = getMetric(data, type, 'kv_available_tokens', 'kv_cache_free_tokens')
+  const totalContext =
+    contextTokens !== undefined && kvAvailable !== undefined
+      ? contextTokens + kvAvailable
+      : contextTokens
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -88,14 +93,24 @@ export function ProviderCard({ sample }: ProviderCardProps) {
           <p className="text-gray-500 dark:text-gray-400">Context</p>
           <p
             className="text-lg font-bold text-gray-900 dark:text-white"
-            title={contextTokens !== undefined ? contextTokens.toLocaleString() : undefined}
+            title={
+              contextTokens !== undefined
+                ? totalContext !== undefined
+                  ? `${contextTokens.toLocaleString()} of ${totalContext.toLocaleString()}`
+                  : contextTokens.toLocaleString()
+                : undefined
+            }
           >
-            {formatCompact(contextTokens)}
+            {totalContext !== undefined
+              ? `${formatCompact(contextTokens)} / ${formatCompact(totalContext)}`
+              : formatCompact(contextTokens)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {contextTokens !== undefined && tokenUsage !== undefined
-              ? `${formatCompact(contextTokens)} · ${formatFraction(tokenUsage)} used`
-              : formatFraction(tokenUsage)}
+            {tokenUsage !== undefined
+              ? `${formatFraction(tokenUsage)} used`
+              : totalContext !== undefined && contextTokens !== undefined
+              ? `${((contextTokens / totalContext) * 100).toFixed(1)}% used`
+              : '\u00A0'}
           </p>
         </div>
       </div>

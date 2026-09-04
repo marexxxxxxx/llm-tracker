@@ -52,10 +52,12 @@ export const metricsApi = {
 
   getHistory: async (
     providerId: number,
-    hours?: number,
-    limit?: number
+    windowMin?: number,
+    limit?: number,
+    hours?: number
   ): Promise<MetricsHistory[]> => {
     const params = new URLSearchParams()
+    if (windowMin != null && windowMin > 0) params.append('minutes', windowMin.toString())
     if (hours) params.append('hours', hours.toString())
     if (limit) params.append('limit', limit.toString())
     const response = await api.get(`/metrics/history/${providerId}?${params}`)

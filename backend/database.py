@@ -145,16 +145,21 @@ async def get_latest_metrics(db: aiosqlite.Connection) -> list[dict]:
 async def get_metrics_history(
     db: aiosqlite.Connection,
     provider_id: int,
-    hours: int = 24,
+    hours: float = 24,
     limit: int = 1000,
+    minutes: Optional[float] = None,
 ) -> list[dict]:
+    if minutes is not None:
+        modifier = f"-{minutes} minutes"
+    else:
+        modifier = f"-{hours} hours"
     cursor = await db.execute(
         """SELECT id, provider_id, timestamp, data
            FROM metrics_samples
            WHERE provider_id = ?
              AND timestamp > datetime('now', ?)
            ORDER BY timestamp ASC""",
-        (provider_id, f"-{hours} hours"),
+        (provider_id, modifier),
     )
     rows = await cursor.fetchall()
     if len(rows) > limit:
