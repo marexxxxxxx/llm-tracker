@@ -84,3 +84,33 @@ def test_base_url_builds_correctly_with_scheme_host():
 
     p2 = Dummy("192.168.1.24", 30000)
     assert p2.base_url == "http://192.168.1.24:30000"
+
+
+@pytest.mark.asyncio
+async def test_sglang_fetch_metrics_captures_prompt_and_generation(monkeypatch):
+    import httpx
+    from backend.providers import sglang
+
+    prometheus_text = (
+        'sglang:gen_throughput{model_name="m"} 35.1\n'
+        'sglang:prompt_tokens_total{model_name="m"} 4882260.0\n'
+        'sglang:generation_tokens_total{model_name="m"} 139795.0\n'
+        'sglang:num_running_reqs{model_name="m"} 0.0\n'
+        'sglang:token_usage{model_name="m"} 0.74\n'
+    )
+
+    async def handle(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/metrics"):
+            return httpx.Response(200, text=prometheus_text)
+        return httpx.Response(200, json={"model_path": "m"})
+
+    original_cls = httpx.AsyncClient
+    monkeypatch.setattr(
+        sglang.httpx,
+        "AsyncClient",
+        lambda **kw: original_cls(transport=httpx.MockTransport(handle)),
+    )
+    provider = sglang.SGLangProvider("192.168.1.24", 30000)
+    metrics = await provider.fetch_metrics()
+    assert metrics["sglang:prompt_tokens_total"] == 4882260.0
+    assert metrics["sglang:generation_tokens_total"] == 139795.0

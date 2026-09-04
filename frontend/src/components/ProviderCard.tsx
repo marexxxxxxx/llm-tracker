@@ -24,6 +24,14 @@ function formatFraction(value: number | undefined): string {
   return `${(value * 100).toFixed(1)}%`
 }
 
+function formatCompact(value: number | undefined): string {
+  if (typeof value !== 'number') return '-'
+  if (value >= 1e9) return (value / 1e9).toFixed(2) + 'B'
+  if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M'
+  if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K'
+  return value.toLocaleString()
+}
+
 export function ProviderCard({ sample }: ProviderCardProps) {
   const data = sample.data
   const type = sample.type
@@ -37,6 +45,14 @@ export function ProviderCard({ sample }: ProviderCardProps) {
   const activeRequests = getMetric(data, type, 'num_running_reqs', 'requests_processing')
   const queue = getMetric(data, type, 'num_queue_reqs', 'requests_deferred')
   const tokenUsage = getMetric(data, type, 'token_usage', 'kv_cache_usage_ratio')
+  const promptTokens = getMetric(data, type, 'prompt_tokens_total')
+  const generatedTokens = getMetric(
+    data,
+    type,
+    'generation_tokens_total',
+    'tokens_predicted_total',
+  )
+  const contextTokens = getMetric(data, type, 'num_used_tokens', 'kv_cache_tokens')
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
@@ -69,12 +85,42 @@ export function ProviderCard({ sample }: ProviderCardProps) {
           </p>
         </div>
         <div>
-          <p className="text-gray-500 dark:text-gray-400">KV Cache</p>
-          <p className="text-lg font-bold text-gray-900 dark:text-white">
-            {formatFraction(tokenUsage)}
+          <p className="text-gray-500 dark:text-gray-400">Context</p>
+          <p
+            className="text-lg font-bold text-gray-900 dark:text-white"
+            title={contextTokens !== undefined ? contextTokens.toLocaleString() : undefined}
+          >
+            {formatCompact(contextTokens)}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {contextTokens !== undefined && tokenUsage !== undefined
+              ? `${formatCompact(contextTokens)} · ${formatFraction(tokenUsage)} used`
+              : formatFraction(tokenUsage)}
           </p>
         </div>
       </div>
+
+      {(promptTokens !== undefined || generatedTokens !== undefined) && (
+        <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 text-sm">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 tracking-wide">
+            TOTAL TOKENS
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">Read (prompt)</p>
+              <p className="font-semibold text-gray-900 dark:text-white" title={promptTokens !== undefined ? promptTokens.toLocaleString() : undefined}>
+                {formatCompact(promptTokens)}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 dark:text-gray-400">Generated</p>
+              <p className="font-semibold text-gray-900 dark:text-white" title={generatedTokens !== undefined ? generatedTokens.toLocaleString() : undefined}>
+                {formatCompact(generatedTokens)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {typeof data.model_name === 'string' && (
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400 truncate">

@@ -50,9 +50,13 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
   const selected = providers.find((p) => p.id === providerId)
   const type = selected?.type
 
+  const endMs = Date.now()
+  const startMs = endMs - range * 3600 * 1000
+  const timeDomain: [number, number] = [startMs, endMs]
+
   const series = (getValue: (d: Record<string, unknown>) => number) =>
     history.map((sample) => ({
-      time: new Date(sample.timestamp).toLocaleTimeString(),
+      time: new Date(sample.timestamp).getTime(),
       value: getValue(sample.data),
     }))
 
@@ -105,24 +109,28 @@ export function HistoricalCharts({ providers }: HistoricalChartsProps) {
             data={series((d) => getNum(d, 'gen_throughput', 'predicted_tokens_seconds'))}
             color="#3b82f6"
             unit="tokens per second"
+            timeDomain={timeDomain}
           />
           <MetricsChart
             title="Active Requests"
             data={series((d) => getNum(d, 'num_running_reqs', 'requests_processing'))}
             color="#10b981"
             unit="requests"
+            timeDomain={timeDomain}
           />
           <MetricsChart
             title="KV Cache Usage"
             data={series((d) => getNum(d, 'token_usage', 'kv_cache_usage_ratio'))}
             color="#f59e0b"
             unit="ratio (0-1)"
+            timeDomain={timeDomain}
           />
           <MetricsChart
             title="Queue Size"
             data={series((d) => getNum(d, 'num_queue_reqs', 'requests_deferred'))}
             color="#ef4444"
             unit="requests"
+            timeDomain={timeDomain}
           />
         </div>
       )}

@@ -153,11 +153,13 @@ async def get_metrics_history(
            FROM metrics_samples
            WHERE provider_id = ?
              AND timestamp > datetime('now', ?)
-           ORDER BY timestamp DESC
-           LIMIT ?""",
-        (provider_id, f"-{hours} hours", limit),
+           ORDER BY timestamp ASC""",
+        (provider_id, f"-{hours} hours"),
     )
     rows = await cursor.fetchall()
+    if len(rows) > limit:
+        step = len(rows) / limit
+        rows = [rows[int(i * step)] for i in range(limit)]
     results = []
     for r in rows:
         d = dict(r)

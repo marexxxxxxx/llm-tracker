@@ -21,6 +21,7 @@ class SGLangProvider(BaseProvider):
                 "sglang:num_running_reqs",
                 "sglang:num_queue_reqs",
                 "sglang:token_usage",
+                "sglang:prompt_tokens_total",
                 "sglang:generation_tokens_total",
                 "sglang:num_requests_total",
                 "sglang:cache_hit_rate",
